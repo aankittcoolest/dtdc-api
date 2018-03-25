@@ -18,9 +18,8 @@ router.post('/', checkAuth, (req, res, next) => {
                     message: 'user already exists'
                 })
             } else {
-                var address = res.body.address
                 var addresses = new Array()
-                if (address) {
+                if (req.body.address) {
                     const address = new Address({
                         _id: mongoose.Types.ObjectId(),
                         street: req.body.address.street,
@@ -32,11 +31,10 @@ router.post('/', checkAuth, (req, res, next) => {
                         country: req.body.address.country
                     })
                     address.save()
-                        .then(result => {
-                            var addreses = new Array()
+                        .then(addressResult => {
                             var senderAddress = {}
                             senderAddress['serialNumber'] = 1
-                            senderAddress['address'] = result._id
+                            senderAddress['address'] = addressResult._id
                             addresses.push(senderAddress)
                             const senderAddresses = new SenderAddresses({
                                 _id: mongoose.Types.ObjectId(),
@@ -47,6 +45,7 @@ router.post('/', checkAuth, (req, res, next) => {
                                 .then(result => {
                                     res.status(200).json({
                                         message: 'object successfully inserted',
+                                        addressResult: addressResult,
                                         result: result
                                     })
                                 })
@@ -86,6 +85,7 @@ router.post('/', checkAuth, (req, res, next) => {
             }
         })
         .catch(err => {
+            console.log(err)
             res.status(500).json({
                 error: "invalid user id or user not found"
             })
@@ -95,11 +95,11 @@ router.post('/', checkAuth, (req, res, next) => {
 
 //Add new object for inserting new addresses
 router.patch('/add-address/:id', checkAuth, (req, res, next) => {
-    SenderAddresses.findById(req.params.id)
+    SenderAddresses.find({ userId: req.body.userId })
         .exec()
         .then(result => {
             if (result) {
-                var addresses = result.addresses
+                var addresses = result[0].addresses
                 const address = new Address({
                     _id: mongoose.Types.ObjectId(),
                     street: req.body.address.street,
@@ -111,18 +111,22 @@ router.patch('/add-address/:id', checkAuth, (req, res, next) => {
                     country: req.body.address.country
                 })
                 address.save()
-                    .then(result => {
+                    .then(addressResult => {
                         var senderAddress = {}
-                        senderAddress['serialNumber'] = 1
-                        senderAddress['address'] = result._id
+                        senderAddress['serialNumber'] = addresses.length + 1
+                        senderAddress['address'] = addressResult._id
                         addresses.push(senderAddress)
                         var updateOps = {}
                         updateOps["addresses"] = addresses
+                        console.log(updateOps)
                         SenderAddresses.update({ _id: req.params.id }, { $set: updateOps })
                             .exec()
                             .then(result => {
+                                console.log(result)
                                 return res.status(200).json({
-                                    message: 'New address successfully inserted'
+                                    message: 'New address successfully inserted',
+                                    addressResult: addressResult,
+                                    result: result
                                 })
                             })
                             .catch(err => {
@@ -193,7 +197,7 @@ router.get('/all', checkAuth, (req, res, next) => {
 })
 
 //Temporary route to delete all senders addresses of all users
-router.delete('/',checkAuth, (req, res, next) => {
+router.delete('/', (req, res, next) => {
     SenderAddresses.remove({})
         .then(result => {
             res.status(200).json({
@@ -208,13 +212,13 @@ router.delete('/',checkAuth, (req, res, next) => {
 })
 
 
-router.get('/:userId', checkAuth, (req, res, next) => {
+router.get('/:userId',  (req, res, next) => {
     SenderAddresses.find({ userId: req.params.userId })
         .populate('addresses.address')
         .exec()
         .then(result => {
             res.status(200).json({
-                result: result
+                result: result[0]
             })
         })
         .catch(err => {

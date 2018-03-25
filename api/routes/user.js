@@ -3,10 +3,12 @@ const router = express.Router()
 const mongoose = require('mongoose')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
+const checkAuth = require('../middleware/check-auth')
+
 
 const User = require('../models/user')
 
-router.get('/', (req, res, next) => {
+router.get('/all', (req, res, next) => {
     User.find()
     .exec()
     .then(result => {
@@ -17,6 +19,19 @@ router.get('/', (req, res, next) => {
             error: err
         })
     })
+})
+
+router.get('/', checkAuth, (req, res, next) => {
+    if(req.userData) {
+        return res.status(200).json({
+            found: 1,
+            user: req.userData
+        })
+    } else {
+        return res.status(200).json({
+            found: 0
+        })
+    }
 })
 
 router.post('/signup', (req, res, next) => {

@@ -32,11 +32,11 @@ router.post('/', checkAuth,  (req, res, next) => {
                         country: req.body.address.country
                     })
                     address.save()
-                    .then(result => {
+                    .then(addressResult => {
                         var addresses = new Array()
                         var receiverAddress = {}
                         receiverAddress['serialNumber'] = 1
-                        receiverAddress['address'] = result._id
+                        receiverAddress['address'] = addressResult._id
                         addresses.push(receiverAddress)
                         const receiverAddresses = new ReceiverAddresses({
                             _id: mongoose.Types.ObjectId(),
@@ -47,6 +47,7 @@ router.post('/', checkAuth,  (req, res, next) => {
                             .then(result => {
                                return res.status(200).json({
                                     message: 'object successfully inserted',
+                                    addressResult: addressResult,
                                     result: result
                                 })
                             })
@@ -111,10 +112,10 @@ router.patch('/add-address/:id', checkAuth,  (req, res, next) => {
                     country: req.body.address.country
                 })
                 address.save()
-                    .then(result => {
+                    .then(addressResult => {
                         var receiverAddress = {}
-                        receiverAddress['serialNumber'] = 1
-                        receiverAddress['address'] = result._id
+                        receiverAddress['serialNumber'] = addresses.length + 1
+                        receiverAddress['address'] = addressResult._id
                         addresses.push(receiverAddress)
                         var updateOps = {}
                         updateOps["addresses"] = addresses
@@ -122,7 +123,9 @@ router.patch('/add-address/:id', checkAuth,  (req, res, next) => {
                             .exec()
                             .then(result => {
                                 return res.status(200).json({
-                                    message: 'New address successfully inserted'
+                                    message: 'New address successfully inserted',
+                                    addressResult: addressResult,
+                                    result: result
                                 })
                             })
                             .catch(err => {
@@ -214,7 +217,7 @@ router.get('/:userId', checkAuth, (req, res, next) => {
         .exec()
         .then(result => {
             res.status(200).json({
-                result: result
+                result: result[0]
             })
         })
         .catch(err => {
