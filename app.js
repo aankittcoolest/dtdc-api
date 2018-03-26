@@ -3,14 +3,14 @@ const app = epxress()
 const morgan = require('morgan')
 const mongooose = require('mongoose')
 const bodyParser = require('body-parser')
+require('dotenv').config()
 
 const userRouters = require('./api/routes/user')
 const senderAddressesRouters = require('./api/routes/senderAddresses')
 const receiverAddressesRouters = require('./api/routes/receiverAddresses')
 const requestHistoryRouters = require('./api/routes/requestHistory')
 
-
-mongooose.connect('mongodb://dtdc:dtdc@cluster0-shard-00-00-61tgy.mongodb.net:27017,cluster0-shard-00-01-61tgy.mongodb.net:27017,cluster0-shard-00-02-61tgy.mongodb.net:27017/test?ssl=true&replicaSet=Cluster0-shard-0&authSource=admin')
+mongooose.connect('mongodb://dtdc:'+process.env.MONGO_ATLAS_PW+'@cluster0-shard-00-00-61tgy.mongodb.net:27017,cluster0-shard-00-01-61tgy.mongodb.net:27017,cluster0-shard-00-02-61tgy.mongodb.net:27017/test?ssl=true&replicaSet=Cluster0-shard-0&authSource=admin')
 
 mongooose.Promise = global.Promise
 
